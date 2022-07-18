@@ -13,6 +13,7 @@ const (
 Set each NAME to VALUE in the environment and run COMMAND.
   -ignore-environment  start with an empty environment
   -null           end each output line with 0 byte rather than newline
+  -sanitise       delete the sensitive environment variables
   -unset=NAME     remove variable from the environment
   -help           display this help and exit
   -version        output version information and exit
@@ -192,6 +193,11 @@ func main() {
 	}
 	if *unset != "" {
 		unsetenv(*unset)
+	}
+	if *sanitise {
+		for _, key := range apiKeys() {
+			unsetenv(key)
+		}
 	}
 	arg := flag.Args()
 	if len(arg) >= 1 && arg[0] == "-" {
