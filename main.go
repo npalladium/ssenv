@@ -29,40 +29,8 @@ it under certain conditions in LICENSE.
 `
 )
 
-var (
-	help      = flag.Bool("help", false, "help")
-	version   = flag.Bool("version", false, "version_text")
-	ignoreEnv = flag.Bool("ignore-environment", false, "start with an empty environment")
-	nullOpt   = flag.Bool("null", false, "end each output line with 0 byte rather than newline")
-	unset     = flag.String("unset", "", "remove variable from the environment")
-	environ   = os.Environ()
-)
-
-func setenv(name, value string) {
-	os.Setenv(name, value)
-	for i := 0; i < len(environ); i++ {
-		e := strings.SplitN(environ[i], "=", 2)
-		if e[0] == name {
-			environ[i] = name + "=" + value
-			return
-		}
-	}
-	environ = append(environ, name+"="+value)
-}
-func unsetenv(name string) {
-	os.Unsetenv(name)
-	for i := 0; i < len(environ); {
-		e := strings.SplitN(environ[i], "=", 2)
-		if e[0] == name && len(e) == 2 {
-			environ = append(environ[:i], environ[i+1:]...) // delete
-		} else {
-			i++
-		}
-	}
-}
-
-func tokenInEnv() bool {
-	var apikeys = []string{
+func apiKeys() []string {
+	return []string{
 		"ACCESS-TOKEN",
 		"APIFY_TOKEN",
 		"API_KEY",
@@ -153,7 +121,46 @@ func tokenInEnv() bool {
 		"VAULT_TOKEN",
 		"VERCEL_ARTIFACTS_TOKEN",
 	}
-	for _, s := range apikeys {
+}
+
+var (
+	help      = flag.Bool("help", false, "help")
+	version   = flag.Bool("version", false, "version_text")
+	ignoreEnv = flag.Bool("ignore-environment", false, "start with an empty environment")
+	nullOpt   = flag.Bool("null", false, "end each output line with 0 byte rather than newline")
+	sanitise  = flag.Bool("sanitise", false, "remove the api keys from env")
+	unset     = flag.String("unset", "", "remove variable from the environment")
+	environ   = os.Environ()
+)
+
+func setenv(name, value string) {
+	err := os.Setenv(name, value)
+	if err != nil {
+		return
+	}
+	for i := 0; i < len(environ); i++ {
+		e := strings.SplitN(environ[i], "=", 2)
+		if e[0] == name {
+			environ[i] = name + "=" + value
+			return
+		}
+	}
+	environ = append(environ, name+"="+value)
+}
+func unsetenv(name string) {
+	_ = os.Unsetenv(name)
+	for i := 0; i < len(environ); {
+		e := strings.SplitN(environ[i], "=", 2)
+		if e[0] == name && len(e) == 2 {
+			environ = append(environ[:i], environ[i+1:]...) // delete
+		} else {
+			i++
+		}
+	}
+}
+
+func tokenInEnv() bool {
+	for _, s := range apiKeys() {
 		_, present := os.LookupEnv(s)
 		if present {
 			fmt.Printf("Found key: [%s]", s)
