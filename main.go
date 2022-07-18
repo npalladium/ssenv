@@ -172,9 +172,6 @@ func tokenInEnv() bool {
 }
 
 func main() {
-	if tokenInEnv() {
-		os.Exit(1)
-	}
 	optNullTerminateOutput := false
 	flag.Parse()
 	if *help {
@@ -198,6 +195,9 @@ func main() {
 		for _, key := range apiKeys() {
 			unsetenv(key)
 		}
+	}
+	if !*sanitise && tokenInEnv() {
+		os.Exit(1)
 	}
 	arg := flag.Args()
 	if len(arg) >= 1 && arg[0] == "-" {
