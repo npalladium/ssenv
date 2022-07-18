@@ -1,11 +1,67 @@
 package main
 
 import (
-	"log"
+	"flag"
+	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 )
 
-func main() {
+const (
+	help_text = `Usage: env [OPTION]... [-] [NAME=VALUE]... [COMMAND [ARG]...]
+Set each NAME to VALUE in the environment and run COMMAND.
+  -ignore-environment  start with an empty environment
+  -null           end each output line with 0 byte rather than newline
+  -unset=NAME     remove variable from the environment
+  -help     display this help and exit
+  -version  output version information and exit
+`
+	version_text = `ssenv 0.0.1
+
+Portions Copyright (C) 2014, The GO-Coreutils Developers.
+Portions Copyright (C) 2022, Michael Ablassmeier (abbbi).
+Portions Copyright (C) 2022, npalladium
+
+This program comes with ABSOLUTELY NO WARRANTY; for details see
+LICENSE. This is free software, and you are welcome to redistribute
+it under certain conditions in LICENSE.
+`
+)
+
+var (
+	help      = flag.Bool("help", false, "help")
+	version   = flag.Bool("version", false, "version_text")
+	ignoreEnv = flag.Bool("ignore-environment", false, "start with an empty environment")
+	nullOpt   = flag.Bool("null", false, "end each output line with 0 byte rather than newline")
+	unset     = flag.String("unset", "", "remove variable from the environment")
+	environ   = os.Environ()
+)
+
+func setenv(name, value string) {
+	os.Setenv(name, value)
+	for i := 0; i < len(environ); i++ {
+		e := strings.SplitN(environ[i], "=", 2)
+		if e[0] == name {
+			environ[i] = name + "=" + value
+			return
+		}
+	}
+	environ = append(environ, name+"="+value)
+}
+func unsetenv(name string) {
+	os.Unsetenv(name)
+	for i := 0; i < len(environ); {
+		e := strings.SplitN(environ[i], "=", 2)
+		if e[0] == name && len(e) == 2 {
+			environ = append(environ[:i], environ[i+1:]...) // delete
+		} else {
+			i++
+		}
+	}
+}
+
+func tokenInEnv() bool {
 	var apikeys = []string{
 		"ACCESS-TOKEN",
 		"APIFY_TOKEN",
@@ -100,7 +156,78 @@ func main() {
 	for _, s := range apikeys {
 		_, present := os.LookupEnv(s)
 		if present {
-			log.Fatalf("Found key: [%s]", s)
+			fmt.Printf("Found key: [%s]", s)
+			return true
+		}
+	}
+	return false
+}
+
+func main() {
+	if tokenInEnv() {
+		os.Exit(1)
+	}
+	optNullTerminateOutput := false
+	flag.Parse()
+	if *help {
+		fmt.Println(help_text)
+		os.Exit(0)
+	}
+	if *version {
+		fmt.Println(version_text)
+		os.Exit(0)
+	}
+	if *ignoreEnv {
+		environ = make([]string, 0)
+	}
+	if *nullOpt {
+		optNullTerminateOutput = true
+	}
+	if *unset != "" {
+		unsetenv(*unset)
+	}
+	arg := flag.Args()
+	if len(arg) >= 1 && arg[0] == "-" {
+		environ = make([]string, 0)
+		arg = arg[1:]
+	}
+	if len(arg) >= 1 {
+		for i, _ := range arg {
+			if strings.Index(arg[i], "=") > 0 {
+				e := strings.SplitN(arg[i], "=", 2)
+				setenv(e[0], e[1])
+			} else {
+				// run COMMAND
+				if optNullTerminateOutput {
+					fmt.Println("ssenv: cannot specify -null with command: No such file or directory")
+					fmt.Println("Try 'ssenv -help' for more information.")
+					os.Exit(1)
+				}
+				cmd := exec.Command(arg[i], arg[i+1:]...)
+				cmd.Stdin = os.Stdin
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				cmd.Env = environ
+				err := cmd.Run()
+				if err != nil {
+					_, lookPathErr := exec.LookPath(arg[i])
+					if lookPathErr != nil {
+						fmt.Printf("env: %s: No such file or directory\n", arg[i])
+					} else {
+						fmt.Println(err)
+					}
+					os.Exit(1)
+				}
+				os.Exit(0)
+			}
+		}
+	}
+	// print all Environment
+	for _, s := range environ {
+		if optNullTerminateOutput {
+			fmt.Printf("%v%c", s, '\000')
+		} else {
+			fmt.Println(s)
 		}
 	}
 }
