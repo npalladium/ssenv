@@ -14,8 +14,8 @@ Set each NAME to VALUE in the environment and run COMMAND.
   -ignore-environment  start with an empty environment
   -null           end each output line with 0 byte rather than newline
   -unset=NAME     remove variable from the environment
-  -help     display this help and exit
-  -version  output version information and exit
+  -help           display this help and exit
+  -version        output version information and exit
 `
 	version_text = `ssenv 0.0.1
 
