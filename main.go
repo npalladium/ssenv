@@ -164,7 +164,7 @@ func tokenInEnv() bool {
 	for _, s := range apiKeys() {
 		_, present := os.LookupEnv(s)
 		if present {
-			fmt.Printf("Found key: [%s]", s)
+			fmt.Printf("Found key: [%s]\n", s)
 			return true
 		}
 	}
