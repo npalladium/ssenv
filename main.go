@@ -8,8 +8,13 @@ import (
 	"strings"
 )
 
+var (
+	version = "none"
+	commit  = "none"
+)
+
 const (
-	help_text = `Usage: env [OPTION]... [-] [NAME=VALUE]... [COMMAND [ARG]...]
+	helpText = `Usage: env [OPTION]... [-] [NAME=VALUE]... [COMMAND [ARG]...]
 Set each NAME to VALUE in the environment and run COMMAND.
   -ignore-environment  start with an empty environment
   -null           end each output line with 0 byte rather than newline
@@ -18,17 +23,16 @@ Set each NAME to VALUE in the environment and run COMMAND.
   -help           display this help and exit
   -version        output version information and exit
 `
-	version_text = `ssenv 0.0.1
+)
+
+var versionText = "Version: " + version + ". "+  "Commit: " + commit + "." + `
 
 Portions Copyright (C) 2014, The GO-Coreutils Developers.
 Portions Copyright (C) 2022, Michael Ablassmeier (abbbi).
 Portions Copyright (C) 2022, npalladium
 
-This program comes with ABSOLUTELY NO WARRANTY; for details see
-LICENSE. This is free software, and you are welcome to redistribute
-it under certain conditions in LICENSE.
+ssenv is licensed under the GNU General Public License v3.
 `
-)
 
 func apiKeys() []string {
 	return []string{
@@ -127,13 +131,13 @@ func apiKeys() []string {
 }
 
 var (
-	help      = flag.Bool("help", false, "help")
-	version   = flag.Bool("version", false, "version_text")
-	ignoreEnv = flag.Bool("ignore-environment", false, "start with an empty environment")
-	nullOpt   = flag.Bool("null", false, "end each output line with 0 byte rather than newline")
-	sanitise  = flag.Bool("sanitise", false, "remove the api keys from env")
-	unset     = flag.String("unset", "", "remove variable from the environment")
-	environ   = os.Environ()
+	help       = flag.Bool("help", false, "help")
+	versionOpt = flag.Bool("version", false, "version_text")
+	ignoreEnv  = flag.Bool("ignore-environment", false, "start with an empty environment")
+	nullOpt    = flag.Bool("null", false, "end each output line with 0 byte rather than newline")
+	sanitise   = flag.Bool("sanitise", false, "remove the api keys from env")
+	unset      = flag.String("unset", "", "remove variable from the environment")
+	environ    = os.Environ()
 )
 
 func setenv(name, value string) {
@@ -177,11 +181,11 @@ func main() {
 	optNullTerminateOutput := false
 	flag.Parse()
 	if *help {
-		fmt.Println(help_text)
+		fmt.Println(helpText)
 		os.Exit(0)
 	}
-	if *version {
-		fmt.Println(version_text)
+	if *versionOpt {
+		fmt.Println(versionText)
 		os.Exit(0)
 	}
 	if *ignoreEnv {
