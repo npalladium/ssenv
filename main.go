@@ -25,7 +25,7 @@ Set each NAME to VALUE in the environment and run COMMAND.
 `
 )
 
-var versionText = "Version: " + version + ". "+  "Commit: " + commit + "." + `
+var versionText = "Version: " + version + ". " + "Commit: " + commit + "." + `
 
 Portions Copyright (C) 2014, The GO-Coreutils Developers.
 Portions Copyright (C) 2022, Michael Ablassmeier (abbbi).
